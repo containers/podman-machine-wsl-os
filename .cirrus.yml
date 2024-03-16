@@ -116,7 +116,7 @@ release_task:
   only_if: $CIRRUS_BRANCH == 'main' && $CIRRUS_PR == "" && $CIRRUS_TAG == ""
   execution_lock: podman-wsl-fedora-5-release
   env:
-    GH_TOKEN: ENCRYPTED[a02312602f9630b9fade968d840c7a8c74e6b73b9f367b75d533023e25d3da3ecce861a0042ad27c14c2ef2b14ec07fa]
+    GH_TOKEN: ENCRYPTED[8297ab7a306113a13517c34bfa60293c25b6f07ea8e0518eb0dbf13f6a4e94705fb875e6957558076d8ffcc73821f464]
 
   depends_on:
     - build

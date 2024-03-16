@@ -1,0 +1,169 @@
+env:
+  IMAGE_TAG: 39
+  GITHUB_SERVER_URL: "https://github.com"
+  CIRRUS_SHELL: bash
+  IMAGE_SUFFIX: "c20240227t125812z-f39f38d13"
+  FEDORA_AARCH64_AMI: "fedora-podman-aws-arm64-${IMAGE_SUFFIX}"
+  FEDORA_AMI: "fedora-aws-${IMAGE_SUFFIX}"
+  PCURL_RETRY: "curl --retry 5 --retry-delay 8 --retry-all-errors -L"
+  PACKAGE_LIST: "procps-ng openssh-server net-tools iproute dhcp-client crun-wasm wasmedge-rt qemu-user-static subscription-manager" 
+  VER_PFX: "5.0"
+
+aws_credentials: ENCRYPTED[d8df25d9f680ea7b046e9883851355574913eb4bf7b89acc4efe8e039a4fc0112ade4469ff98d6a9a22285d495034905]
+
+build_task:
+  alias: 'build'
+  only_if: $CIRRUS_BRANCH == 'main' && $CIRRUS_PR == "" && $CIRRUS_TAG == ""
+  auto_cancellation: true
+  env:
+    matrix:
+      - BUILD_ARCH: "arm64"
+        USE_AMI: $FEDORA_AARCH64_AMI
+        USE_TYPE: "t4g.xlarge"
+      - BUILD_ARCH: "amd64"
+        USE_AMI: $FEDORA_AMI
+        USE_TYPE: "t3.xlarge"
+    LAST_IMAGE_FILE: $VER_PFX-latest-$BUILD_ARCH
+    ROOTFS_FILE: $VER_PFX-rootfs-$BUILD_ARCH.tar.zst
+    PCACHE_KEY: upload-$VER_PFX-$CIRRUS_BUILD_ID-$BUILD_ARCH
+  name: "build-$VER_PFX-$BUILD_ARCH"
+  execution_lock: "podman-wsl-fedora-build-$VER_PFX-$BUILD_ARCH"
+  ec2_instance:
+    image: $USE_AMI
+    type: $USE_TYPE
+    region: us-east-1
+    architecture: $BUILD_ARCH
+  clear_script: |
+    $PCURL_RETRY -v -X "DELETE" "http://$CIRRUS_HTTP_CACHE_HOST/$PCACHE_KEY"
+  get_script: |
+    set +o verbose
+    date >> changes
+    podman image pull docker.io/library/fedora:$IMAGE_TAG
+    imageDigest=`podman image inspect docker.io/library/fedora:$IMAGE_TAG --format {{.Digest}}`
+    echo $imageDigest > "$LAST_IMAGE_FILE"
+    echo "Fetching $GITHUB_SERVER_URL/$CIRRUS_REPO_FULL_NAME/releases/latest/download/$LAST_IMAGE_FILE"
+    lastImage=`$PCURL_RETRY "$GITHUB_SERVER_URL/$CIRRUS_REPO_FULL_NAME/releases/latest/download/$LAST_IMAGE_FILE"`
+    echo "Digest: $imageDigest"
+    echo "Last: $lastImage"
+    if [ "$lastImage" != "$imageDigest" ]; then
+      echo "Image needs update"
+      echo -e "\nImage update:\n $imageDigest\n" >> changes
+      echo "IMAGE_CHANGED=1" >> $CIRRUS_ENV
+    fi
+  reuse_script: |
+    set +o verbose
+    if [ "$IMAGE_CHANGED" == "1" ]; then
+      echo "Skipped"
+      exit
+    fi
+    echo "Reusing cached image"
+    curl --retry 5 --retry-delay 8 --retry-all-errors -L $GITHUB_SERVER_URL/$CIRRUS_REPO_FULL_NAME/releases/latest/download/$ROOTFS_FILE --output rootfs.tar.zst
+    echo "Extracting rootfs.."
+    unzstd --rm --verbose rootfs.tar.zst
+    podman import rootfs.tar fedora-update
+    podman create --name fedora-update fedora-update sleep 7200
+  clean_script: |
+    set +o verbose
+    if [ "$IMAGE_CHANGED" != "1" ]; then
+      echo "Skipped"
+      exit
+    fi
+    echo "Using clean image"
+    podman create --name fedora-update docker.io/library/fedora:$IMAGE_TAG sleep 7200
+  update_script: |
+    set +o verbose
+    podman start fedora-update
+    podman exec -it fedora-update sh -c 'dnf -y install dnf-plugins-core; dnf -y copr enable rhcontainerbot/podman-next'
+    podman exec fedora-update sh -c 'rpm -qa --qf "%-30{name} %{version}-%{release}\n" | sort' > pre-update
+    podman exec -it fedora-update sh -c "dnf update -y && dnf -y install podman podman-docker $PACKAGE_LIST && dnf clean all && rm -rf /var/cache/yum"
+    podman exec fedora-update sh -c 'rpm -qa --qf "%-30{name} %{version}-%{release}\n" | sort' > post-update
+
+    diff -u pre-update post-update > delta || delta=1
+    if [ ! -z "$delta" ]; then
+      echo "Package changes!"
+      echo -e "\nInstalled packages:\n\`\`\`" >> changes
+      grep '^+' delta | grep -v '+++' | sed 's/^\+//g' >> changes
+      echo "\`\`\`" >> changes
+      echo "PACKAGE_CHANGED=1" >> $CIRRUS_ENV
+    fi
+  archive_script: |
+    set +o verbose
+    if [ "$IMAGE_CHANGED" != "1" ] && [ "$PACKAGE_CHANGED" != "1" ]; then
+      echo "Skipping archive, no updates required"
+      exit
+    fi
+    echo "Creating rootfs.tar from container..."
+    podman export --output rootfs.tar fedora-update
+    # GNu tar has a corruption bugs with --delete, so use bsdtar to filter instead
+    echo "Filtering rootfs.tar using container..."
+    podman run -v .:/mnt --security-opt label=disable fedora sh -c 'dnf -y install bsdtar && bsdtar -cf /mnt/new.tar --exclude etc/resolv.conf @/mnt/rootfs.tar'
+    mv new.tar rootfs.tar
+    mkdir -p etc; touch etc/resolv.conf
+    tar rf rootfs.tar --mode=644 --group=root --owner=root etc/resolv.conf
+    echo "Compressing rootfs.tar.."
+    zstd -T0 --auto-threads=logical --ultra -22 --long --rm --verbose rootfs.tar
+    echo "Done"
+    mv changes "$VER_PFX-changes-$BUILD_ARCH"
+    mv rootfs.tar.zst "$ROOTFS_FILE"
+    ls -lh *rootfs*.tar.zst
+    echo Latest
+    cat $LAST_IMAGE_FILE
+    tar cvf upload.tar $ROOTFS_FILE $VER_PFX-changes-* "$LAST_IMAGE_FILE"
+    curl -X POST --data-binary @upload.tar "http://$CIRRUS_HTTP_CACHE_HOST/$PCACHE_KEY"
+
+
+release_task:
+  only_if: $CIRRUS_BRANCH == 'main' && $CIRRUS_PR == "" && $CIRRUS_TAG == ""
+  execution_lock: podman-wsl-fedora-5-release
+  env:
+    GH_TOKEN: ENCRYPTED[a02312602f9630b9fade968d840c7a8c74e6b73b9f367b75d533023e25d3da3ecce861a0042ad27c14c2ef2b14ec07fa]
+
+  depends_on:
+    - build
+  ec2_instance:
+    image: $FEDORA_AMI
+    type: t3.large
+    region: us-east-1
+    architecture: amd64
+  setup_script: |
+    dnf install 'dnf-command(config-manager)'
+    dnf config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo
+    dnf install -y gh git
+  release_script: |
+    set +o verbose
+    HTTP_PREFIX="$GITHUB_SERVER_URL/$CIRRUS_REPO_FULL_NAME/releases/latest/download"
+    for arch in amd64 arm64; do
+      echo "Fetching build upload for $arch"
+      CACHE_URL="http://$CIRRUS_HTTP_CACHE_HOST/upload-$VER_PFX-$CIRRUS_BUILD_ID-$arch"
+      curl -L -f -o upload-$VER_PFX-$arch.tar $CACHE_URL || test "$?" == "22" 
+      echo    "$VER_PFX - $arch" >> ./changes
+      echo -e "==============\n" >> ./changes
+      if [ ! -f ./upload-$VER_PFX-$arch.tar ]; then
+        echo "Upload for $arch not provided (was skipped in build), will reuse last release"
+        FETCH1="$HTTP_PREFIX/$VER_PFX-rootfs-$arch.tar.zst"
+        FETCH2="$HTTP_PREFIX/$VER_PFX-latest-$arch"
+        echo -e "none\n" >> ./changes
+      else
+        SHOULD_RELEASE=1
+        tar xvf upload-$VER_PFX-$arch.tar
+        cat $VER_PFX-changes-$arch >> ./changes
+      fi
+    done
+
+    if [ -z "$SHOULD_RELEASE" ]; then 
+      echo "All builds were skipped, Nothing to release."
+      exit
+    fi
+    test -z "$FETCH1" || echo "Fetching past artifacts for skipped builds "
+    test -z "$FETCH1" || $PCURL_RETRY -LO "$FETCH1"
+    test -z "$FETCH2" || $PCURL_RETRY -LO "$FETCH2"
+    
+    STAMP=`date -u '+%Y%m%d%H%M%S'`
+    NEXT_RELEASE="v${STAMP}"
+    echo $NEXT_RELEASE > version
+    echo "Releasing $NEXT_RELEASE"
+    sha256sum *rootfs*.tar.zst > shasums
+    set -o verbose
+    gh release create $NEXT_RELEASE -t $NEXT_RELEASE -d -F changes
+    gh release upload $NEXT_RELEASE *latest* *rootfs*.tar.zst shasums version
+    gh release edit $NEXT_RELEASE --draft=false

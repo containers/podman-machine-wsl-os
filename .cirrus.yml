@@ -157,6 +157,12 @@ release_task:
     test -z "$FETCH1" || echo "Fetching past artifacts for skipped builds "
     test -z "$FETCH1" || $PCURL_RETRY -LO "$FETCH1"
     test -z "$FETCH2" || $PCURL_RETRY -LO "$FETCH2"
+
+    # temporary 5.1 clone until divergance occurs
+    for arch in amd64 arm64; do
+      cp $VER_PFX-rootfs-$arch.tar.zst 5.1-rootfs-$arch.tar.zst
+      cp $VER_PFX-latest-$arch 5.1-latest-$arch
+    done
     
     STAMP=`date -u '+%Y%m%d%H%M%S'`
     NEXT_RELEASE="v${STAMP}"

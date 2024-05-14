@@ -1,5 +1,5 @@
 env:
-  IMAGE_TAG: 39
+  IMAGE_TAG: 40 
   GITHUB_SERVER_URL: "https://github.com"
   CIRRUS_SHELL: bash
   IMAGE_SUFFIX: "c20240227t125812z-f39f38d13"
@@ -73,7 +73,7 @@ build_task:
   update_script: |
     set +o verbose
     podman start fedora-update
-    podman exec -it fedora-update sh -c 'dnf -y install dnf-plugins-core; dnf -y copr enable rhcontainerbot/podman-next'
+    # podman exec -it fedora-update sh -c 'dnf -y install dnf-plugins-core; dnf -y copr enable rhcontainerbot/podman-next'
     podman exec fedora-update sh -c 'rpm -qa --qf "%-30{name} %{version}-%{release}\n" | sort' > pre-update
     podman exec -it fedora-update sh -c "dnf update -y && dnf -y install podman podman-docker $PACKAGE_LIST && dnf clean all && rm -rf /var/cache/yum"
     podman exec fedora-update sh -c 'rpm -qa --qf "%-30{name} %{version}-%{release}\n" | sort' > post-update

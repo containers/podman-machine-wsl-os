@@ -134,8 +134,9 @@ release_task:
     dnf install 'dnf-command(config-manager)'
     dnf config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo
     dnf install -y gh git
-    dnf install -y "podman > 5"
-    dnf upgrade -y podman buildah
+    dnf install -y --best "podman > 5"
+    dnf upgrade -y --best podman buildah
+    dnf upgrade -y --best "podman > 5"
   release_script: |
     set +o verbose
     HTTP_PREFIX="$GITHUB_SERVER_URL/$CIRRUS_REPO_FULL_NAME/releases/latest/download"

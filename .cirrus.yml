@@ -117,7 +117,12 @@ release_task:
   execution_lock: podman-wsl-fedora-5-release
   env:
     GH_TOKEN: ENCRYPTED[8297ab7a306113a13517c34bfa60293c25b6f07ea8e0518eb0dbf13f6a4e94705fb875e6957558076d8ffcc73821f464]
-
+    QUAY_PODMAN_USERNAME: ENCRYPTED[e2d239b8d2298ff1f18cb6f89d0fb3b3a659742f16a53d8df0ccda13da8b6ea5f93cb56c61972da3150d976bf774f272]
+    QUAY_PODMAN_PASSWORD: ENCRYPTED[72ff22bc224c90f6154943a38908decba176a6b329004ff302255449e9765968ef3c64c144cda0a9e7250a0289b8edfd]
+    IMAGE_REGISTRY: "quay.io"
+    IMAGE_REPOSITORY: "mloriedo"
+    IMAGE_NAME: "machine-os-wsl"
+    IMAGE_TAG: "5.3"
   depends_on:
     - build
   ec2_instance:
@@ -177,3 +182,26 @@ release_task:
     gh release create $NEXT_RELEASE -t $NEXT_RELEASE -d -F changes
     gh release upload $NEXT_RELEASE *latest* *rootfs*.tar.zst shasums version
     gh release edit $NEXT_RELEASE --draft=false
+
+    # Package the WSL zst compressed disks as an OCI artifact
+    IMAGE_REGISTRY=quay.io
+    IMAGE_REPOSITORY=mloriedo
+    IMAGE_NAME=machine-os-wsl
+    IMAGE_TAG=5.3
+    FULL_IMAGE_NAME=$IMAGE_REGISTRY/$IMAGE_REPO/$IMAGE_NAME:$IMAGE_TAG
+    buildah manifest create $FULL_IMAGE_NAME
+    for disk_arch in x86_64 aarch64; do
+      if [ $disk_arch  == "x86_64" ]; then
+        arch="amd64"
+      else
+        arch="arm64"
+      fi
+      buildah manifest add --artifact --artifact-type="" --os=linux --arch="$disk_arch" --annotation "disktype=wsl" "$FULL_IMAGE_NAME" "$VER_PFX-rootfs-$arch.tar.zst"
+    done
+    # We may want to add the WSL container image too in the manifest as that's done for FCOS based images:
+    # https://github.com/containers/podman-machine-os/blob/676f70456b5a7fe3b5329ca82462414924c3b2b7/gather.sh#L18
+    # That looks unecessary now.
+
+    # Push the OCI artifact to quay.io
+    podman login -u="$QUAY_PODMAN_USERNAME" -p="$QUAY_PODMAN_PASSWORD" quay.io
+    podman push $FULL_IMAGE_NAME

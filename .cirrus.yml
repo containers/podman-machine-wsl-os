@@ -131,6 +131,7 @@ release_task:
     region: us-east-1
     architecture: amd64
   setup_script: |
+    dnf update -y
     dnf install 'dnf-command(config-manager)'
     dnf config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo
     dnf install -y gh git buildah

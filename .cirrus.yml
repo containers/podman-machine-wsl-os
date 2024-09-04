@@ -134,6 +134,7 @@ release_task:
     dnf install 'dnf-command(config-manager)'
     dnf config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo
     dnf install -y gh git
+    dnf install -y "podman > 5"
     dnf upgrade -y podman buildah
   release_script: |
     set +o verbose
@@ -189,9 +190,6 @@ release_task:
     gh release edit $NEXT_RELEASE --draft=false
 
     # Package the WSL zst compressed disks as an OCI artifact
-    podman login -u="$QUAY_PODMAN_USERNAME" -p="$QUAY_PODMAN_PASSWORD" quay.io
-    podman pull quay.io/libpod/alpine
-    podman images
     FULL_IMAGE_NAME=$IMAGE_REGISTRY/$IMAGE_REPO/$IMAGE_NAME:$IMAGE_TAG
     buildah manifest create $FULL_IMAGE_NAME
     for disk_arch in x86_64 aarch64; do
@@ -207,4 +205,5 @@ release_task:
     # That looks unecessary now.
 
     # Push the OCI artifact to quay.io
+    podman login -u="$QUAY_PODMAN_USERNAME" -p="$QUAY_PODMAN_PASSWORD" quay.io
     podman push --log-level debug $FULL_IMAGE_NAME

@@ -155,10 +155,12 @@ release_task:
       fi
     done
 
-    if [ -z "$SHOULD_RELEASE" ]; then 
-      echo "All builds were skipped, Nothing to release."
-      exit
-    fi
+    # Temporarly disable this check to force a release
+    # even if there are no changes
+    # if [ -z "$SHOULD_RELEASE" ]; then 
+    #   echo "All builds were skipped, Nothing to release."
+    #   exit
+    # fi
     test -z "$FETCH1" || echo "Fetching past artifacts for skipped builds "
     test -z "$FETCH1" || $PCURL_RETRY -LO "$FETCH1"
     test -z "$FETCH2" || $PCURL_RETRY -LO "$FETCH2"

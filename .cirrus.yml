@@ -147,6 +147,8 @@ release_task:
         echo "Upload for $arch not provided (was skipped in build), will reuse last release"
         FETCH1="$HTTP_PREFIX/$VER_PFX-rootfs-$arch.tar.zst"
         FETCH2="$HTTP_PREFIX/$VER_PFX-latest-$arch"
+        $PCURL_RETRY -LO "$FETCH1"
+        $PCURL_RETRY -LO "$FETCH2"
         echo -e "none\n" >> ./changes
       else
         SHOULD_RELEASE=1
@@ -161,9 +163,9 @@ release_task:
     #   echo "All builds were skipped, Nothing to release."
     #   exit
     # fi
-    test -z "$FETCH1" || echo "Fetching past artifacts for skipped builds "
-    test -z "$FETCH1" || $PCURL_RETRY -LO "$FETCH1"
-    test -z "$FETCH2" || $PCURL_RETRY -LO "$FETCH2"
+    # test -z "$FETCH1" || echo "Fetching past artifacts for skipped builds "
+    # test -z "$FETCH1" || $PCURL_RETRY -LO "$FETCH1"
+    # test -z "$FETCH2" || $PCURL_RETRY -LO "$FETCH2"
 
     # temporary 5.1, 5.2 and 5.3 clone until divergance occurs
     for arch in amd64 arm64; do

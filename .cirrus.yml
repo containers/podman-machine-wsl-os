@@ -134,9 +134,6 @@ release_task:
     dnf install 'dnf-command(config-manager)'
     dnf config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo
     dnf install -y gh git
-    # Get latest buildah and podman otherwise the
-    # creation and the upload of the OCI artifact fails
-    # dnf upgrade -y --releasever=40 podman buildah
   release_script: |
     set +o verbose
     HTTP_PREFIX="$GITHUB_SERVER_URL/$CIRRUS_REPO_FULL_NAME/releases/latest/download"
@@ -150,9 +147,6 @@ release_task:
         echo "Upload for $arch not provided (was skipped in build), will reuse last release"
         FETCH1="$HTTP_PREFIX/$VER_PFX-rootfs-$arch.tar.zst"
         FETCH2="$HTTP_PREFIX/$VER_PFX-latest-$arch"
-        # Temporarly download last release artifacts to force release
-        $PCURL_RETRY -LO "$FETCH1"
-        $PCURL_RETRY -LO "$FETCH2"
         echo -e "none\n" >> ./changes
       else
         SHOULD_RELEASE=1
@@ -161,14 +155,13 @@ release_task:
       fi
     done
 
-    # Temporarly disable this check to force release
-    # if [ -z "$SHOULD_RELEASE" ]; then 
-    #   echo "All builds were skipped, Nothing to release."
-    #   exit
-    # fi
-    # test -z "$FETCH1" || echo "Fetching past artifacts for skipped builds "
-    # test -z "$FETCH1" || $PCURL_RETRY -LO "$FETCH1"
-    # test -z "$FETCH2" || $PCURL_RETRY -LO "$FETCH2"
+    if [ -z "$SHOULD_RELEASE" ]; then 
+      echo "All builds were skipped, Nothing to release."
+      exit
+    fi
+    test -z "$FETCH1" || echo "Fetching past artifacts for skipped builds "
+    test -z "$FETCH1" || $PCURL_RETRY -LO "$FETCH1"
+    test -z "$FETCH2" || $PCURL_RETRY -LO "$FETCH2"
 
     # temporary 5.1, 5.2 and 5.3 clone until divergance occurs
     for arch in amd64 arm64; do
@@ -207,4 +200,4 @@ release_task:
 
     # Push the OCI artifact to quay.io
     podman login -u="$QUAY_PODMAN_USERNAME" -p="$QUAY_PODMAN_PASSWORD" quay.io
-    podman push --log-level debug $FULL_IMAGE_NAME
+    podman push $FULL_IMAGE_NAME

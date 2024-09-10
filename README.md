@@ -1,4 +1,4 @@
-![Cirrus CI - Default Branch Build Status](https://img.shields.io/cirrus/github/containers/podman-machine-wsl-os)
+[![Cirrus CI - Default Branch Build Status](https://img.shields.io/cirrus/github/containers/podman-machine-wsl-os)](https://cirrus-ci.com/github/containers/podman-machine-wsl-os)
 
 # Podman Machine WSL OS
 

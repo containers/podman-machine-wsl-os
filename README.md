@@ -10,7 +10,7 @@ The CI is triggered every 3 hours **and** at every push to the main branch.
 
 At every update of the disk image:
 - a new [GitHub release](https://github.com/containers/podman-machine-wsl-os/releases) is created and the new zstd-compressed disk images is added.
-- a new OCI artifact is pushed to [quay.io/mloriedo/machine-os-wsl](https://quay.io/repository/mloriedo/machine-os-wsl?tab=tags)
+- a new OCI artifact is pushed to [quay.io/podman/machine-os-wsl](https://quay.io/repository/podman/machine-os-wsl?tab=tags)
 
 ## Build Process Details
 
@@ -26,7 +26,7 @@ After that, if the are no changes compared to the last time the CI has been exec
 
 If at least one of the 2 images (`amd64` and `arm64`) has been updated then the CI publishes a new release:
 - Creates [a new GitHub release](https://github.com/containers/podman-machine-wsl-os/releases), using the build timestamp as version, and uploads the    
-- Push the OCI artifact to [quay.io/mloriedo/machine-os-wsl](https://quay.io/repository/mloriedo/machine-os-wsl?tab=tags) using the next version of Podman as the image tag
+- Push the OCI artifact to [quay.io/podman/machine-os-wsl](https://quay.io/repository/podman/machine-os-wsl?tab=tags) using the next version of Podman as the image tag
 
 That's done for both `amd64` and `arm64` architectures. And v5.1 and v5.2 zstd files are identical.
 

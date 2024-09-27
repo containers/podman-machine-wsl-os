@@ -6,7 +6,7 @@ env:
   FEDORA_AARCH64_AMI: "fedora-podman-aws-arm64-${IMAGE_SUFFIX}"
   FEDORA_AMI: "fedora-aws-${IMAGE_SUFFIX}"
   PCURL_RETRY: "curl --retry 5 --retry-delay 8 --retry-all-errors -L"
-  PACKAGE_LIST: "procps-ng openssh-server net-tools iproute dhcp-client crun-wasm wasmedge-rt qemu-user-static subscription-manager gvisor-tap-vsock-gvforwarder" 
+  PACKAGE_LIST: "procps-ng openssh-server net-tools iproute dhcp-client crun-wasm wasmedge-rt qemu-user-static subscription-manager gvisor-tap-vsock-gvforwarder cifs-utils nfs-utils-coreos" 
   VER_PFX: "5.0"
 
 aws_credentials: ENCRYPTED[d8df25d9f680ea7b046e9883851355574913eb4bf7b89acc4efe8e039a4fc0112ade4469ff98d6a9a22285d495034905]

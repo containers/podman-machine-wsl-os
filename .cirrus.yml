@@ -122,7 +122,8 @@ release_task:
     IMAGE_REGISTRY: "quay.io"
     IMAGE_REPO: "podman"
     IMAGE_NAME: "machine-os-wsl"
-    IMAGE_TAG: "5.3"
+    IMAGE_TAG_LATEST: "5.3"
+    IMAGE_TAG_NEXT: "5.4"
   depends_on:
     - build
   ec2_instance:
@@ -184,7 +185,8 @@ release_task:
     gh release edit $NEXT_RELEASE --draft=false
 
     # Package the WSL zst compressed disks as an OCI artifact
-    FULL_IMAGE_NAME=$IMAGE_REGISTRY/$IMAGE_REPO/$IMAGE_NAME:$IMAGE_TAG
+    FULL_IMAGE_NAME=$IMAGE_REGISTRY/$IMAGE_REPO/$IMAGE_NAME:$IMAGE_TAG_LATEST
+    FULL_IMAGE_NAME_NEXT=$IMAGE_REGISTRY/$IMAGE_REPO/$IMAGE_NAME:$IMAGE_TAG_NEXT
     buildah manifest create $FULL_IMAGE_NAME
     for disk_arch in x86_64 aarch64; do
       if [ $disk_arch  == "x86_64" ]; then
@@ -201,3 +203,5 @@ release_task:
     # Push the OCI artifact to quay.io
     podman login -u="$QUAY_PODMAN_USERNAME" -p="$QUAY_PODMAN_PASSWORD" quay.io
     podman push $FULL_IMAGE_NAME
+    podman tag $FULL_IMAGE_NAME $FULL_IMAGE_NAME_NEXT
+    podman push $FULL_IMAGE_NAME_NEXT

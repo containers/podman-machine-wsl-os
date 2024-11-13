@@ -46,25 +46,11 @@ That means that every GitHub release needs to include WSL disk images for old an
 
 ## When a new version of Podman is released
 
-When there is a new version of Podman, a new version of the Disk Image should be included in the releases:
+After a new version of Podman has been released (i.e. when the fedora package has been updated), the OCI artifact tags should be updated using development Podman version:
 
 ```diff
--    # temporary 5.1, 5.2, 5.3 clone until divergance occurs
-+    # temporary 5.1, 5.2, 5.3, 5.4 clone until divergance occurs
-    for arch in amd64 arm64; do
-      cp $VER_PFX-rootfs-$arch.tar.zst 5.1-rootfs-$arch.tar.zst
-      cp $VER_PFX-rootfs-$arch.tar.zst 5.2-rootfs-$arch.tar.zst
-      cp $VER_PFX-rootfs-$arch.tar.zst 5.3-rootfs-$arch.tar.zst
-+     cp $VER_PFX-rootfs-$arch.tar.zst 5.4-rootfs-$arch.tar.zst
-      cp $VER_PFX-latest-$arch 5.1-latest-$arch
-      cp $VER_PFX-latest-$arch 5.2-latest-$arch
-      cp $VER_PFX-latest-$arch 5.3-latest-$arch
-+     cp $VER_PFX-latest-$arch 5.4-latest-$arch
-```
-
-And the OCI artifact tag should be updated using development Podman version:
-
-```diff
--    IMAGE_TAG: "5.3"
-+    IMAGE_TAG: "5.4"
+-    IMAGE_TAG_LATEST: "5.3"
+-    IMAGE_TAG_NEXT: "5.4"
++    IMAGE_TAG_LATEST: "5.4"
++    IMAGE_TAG_NEXT: "5.5"
 ```

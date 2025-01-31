@@ -44,6 +44,15 @@ Podman `v5.y.z` downloads `v5.y` of the WSL OS image from the **latest** release
 
 That means that every GitHub release needs to include WSL disk images for old and new versions of Podman 5.
 
+## When a new dev version of Podman is bumped on main branch
+
+Before bumping the version of Podman in c/podman, the corresponding WSL image should be pushed to quay.io:
+
+```diff
+-    IMAGE_TAG_DEV: "5.4"
++    IMAGE_TAG_DEV: "5.5"
+```
+
 ## When a new version of Podman is released
 
 After a new version of Podman has been released (i.e. when the fedora package has been updated), the OCI artifact tags should be updated using development Podman version:
@@ -54,3 +63,5 @@ After a new version of Podman has been released (i.e. when the fedora package ha
 +    IMAGE_TAG_LATEST: "5.4"
 +    IMAGE_TAG_NEXT: "5.5"
 ```
+
+Note that at that point `IMAGE_TAG_NEXT` and `IMAGE_TAG_DEV` will match.

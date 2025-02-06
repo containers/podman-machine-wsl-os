@@ -1,5 +1,5 @@
 env:
-  IMAGE_TAG: 40
+  IMAGE_TAG: 41
   GITHUB_SERVER_URL: "https://github.com"
   CIRRUS_SHELL: bash
   IMAGE_SUFFIX: "c20240821t171500z-f40f39d13"

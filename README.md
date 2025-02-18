@@ -9,7 +9,6 @@ The image is distributed as a [zstd compressed](https://facebook.github.io/zstd/
 The CI is triggered every 3 hours **and** at every push to the main branch.
 
 At every update of the disk image:
-- a new [GitHub release](https://github.com/containers/podman-machine-wsl-os/releases) is created and the new zstd-compressed disk images is added.
 - a new OCI artifact is pushed to [quay.io/podman/machine-os-wsl](https://quay.io/repository/podman/machine-os-wsl?tab=tags)
 
 ## Build Process Details
@@ -37,12 +36,6 @@ WSL disk images build is disconnected to Podman release process.
 The WSL disk image build is triggered every 3 hours and it looks for a new version of Podman. But it looks for an update on Fedora stable and that's usually updated a few days after a Podman release.
 
 For example [Podman v5.2.2 has been released on the 2024-08-21](https://github.com/containers/podman/releases/tag/v5.2.2) but [has been included in Fedora 40 stable](https://bodhi.fedoraproject.org/updates/FEDORA-2024-435a743cf7) one week after that, and the updated WSL disk image [has been released on the 2024-08-27](https://github.com/containers/podman-machine-wsl-os/releases/tag/v20240827181401).
-
-## Always publish current and old version of the disk on GitHub 
-
-Podman `v5.y.z` downloads `v5.y` of the WSL OS image from the **latest** release on this GitHub repository. For example Podman `v5.1.2` downloads the file `5.1-rootfs-amd64.tar.zst` (or the arm64 equivalent) from the latest release.
-
-That means that every GitHub release needs to include WSL disk images for old and new versions of Podman 5.
 
 ## When a new dev version of Podman is bumped on main branch
 

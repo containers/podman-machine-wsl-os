@@ -116,7 +116,6 @@ release_task:
   only_if: $CIRRUS_BRANCH == 'main' && $CIRRUS_PR == "" && $CIRRUS_TAG == ""
   execution_lock: podman-wsl-fedora-5-release
   env:
-    GH_TOKEN: ENCRYPTED[8297ab7a306113a13517c34bfa60293c25b6f07ea8e0518eb0dbf13f6a4e94705fb875e6957558076d8ffcc73821f464]
     QUAY_PODMAN_USERNAME: ENCRYPTED[61302bbc5de3e9a51dde72807c2d6c4e5834aab5f9e00db61c1e8b43a83d08e4dfdc61ca81eb6af0d60739f378be647a]
     QUAY_PODMAN_PASSWORD: ENCRYPTED[55580283bbbf7d9b5fca46bef2deef30b10d9191981965addc2ab5d48ef3515740e464a82caf416d2fba4aa47233d855]
     IMAGE_REGISTRY: "quay.io"
@@ -133,9 +132,7 @@ release_task:
     region: us-east-1
     architecture: amd64
   setup_script: |
-    dnf install 'dnf-command(config-manager)'
-    dnf config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo
-    dnf install -y gh git
+    dnf install -y git
   release_script: |
     set +o verbose
     HTTP_PREFIX="$GITHUB_SERVER_URL/$CIRRUS_REPO_FULL_NAME/releases/latest/download"
@@ -164,26 +161,6 @@ release_task:
     test -z "$FETCH1" || echo "Fetching past artifacts for skipped builds "
     test -z "$FETCH1" || $PCURL_RETRY -LO "$FETCH1"
     test -z "$FETCH2" || $PCURL_RETRY -LO "$FETCH2"
-
-    # temporary 5.1, 5.2 and 5.3 clone until divergance occurs
-    for arch in amd64 arm64; do
-      cp $VER_PFX-rootfs-$arch.tar.zst 5.1-rootfs-$arch.tar.zst
-      cp $VER_PFX-rootfs-$arch.tar.zst 5.2-rootfs-$arch.tar.zst
-      cp $VER_PFX-rootfs-$arch.tar.zst 5.3-rootfs-$arch.tar.zst
-      cp $VER_PFX-latest-$arch 5.1-latest-$arch
-      cp $VER_PFX-latest-$arch 5.2-latest-$arch
-      cp $VER_PFX-latest-$arch 5.3-latest-$arch
-    done
-
-    STAMP=`date -u '+%Y%m%d%H%M%S'`
-    NEXT_RELEASE="v${STAMP}"
-    echo $NEXT_RELEASE > version
-    echo "Releasing $NEXT_RELEASE"
-    sha256sum *rootfs*.tar.zst > shasums
-    set -o verbose
-    gh release create $NEXT_RELEASE -t $NEXT_RELEASE -d -F changes
-    gh release upload $NEXT_RELEASE *latest* *rootfs*.tar.zst shasums version
-    gh release edit $NEXT_RELEASE --draft=false
 
     # Package the WSL zst compressed disks as an OCI artifact
     FULL_IMAGE_NAME=$IMAGE_REGISTRY/$IMAGE_REPO/$IMAGE_NAME:$IMAGE_TAG_LATEST

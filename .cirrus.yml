@@ -2,7 +2,7 @@ env:
   IMAGE_TAG: 41
   GITHUB_SERVER_URL: "https://github.com"
   CIRRUS_SHELL: bash
-  IMAGE_SUFFIX: "c20240821t171500z-f40f39d13"
+  IMAGE_SUFFIX: "c20250131t121915z-f41f40d13"
   FEDORA_AARCH64_AMI: "fedora-podman-aws-arm64-${IMAGE_SUFFIX}"
   FEDORA_AMI: "fedora-aws-${IMAGE_SUFFIX}"
   PCURL_RETRY: "curl --retry 5 --retry-delay 8 --retry-all-errors -L"

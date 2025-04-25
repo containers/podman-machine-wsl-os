@@ -123,7 +123,7 @@ release_task:
     IMAGE_NAME: "machine-os-wsl"
     IMAGE_TAG_LATEST: "5.4"
     IMAGE_TAG_NEXT: "5.5"
-    IMAGE_TAG_DEV: "5.5"
+    IMAGE_TAG_DEV: "5.6"
   depends_on:
     - build
   ec2_instance:

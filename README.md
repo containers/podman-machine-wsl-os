@@ -1,3 +1,7 @@
+# Deprecated
+
+This repository is deprecated. The WSL podman machine image builds have been merged into our main [podman-machine-os](https://github.com/containers/podman-machine-os) repository starting with v5.6 images. Please report new issues there instead.
+
 [![Cirrus CI - Default Branch Build Status](https://img.shields.io/cirrus/github/containers/podman-machine-wsl-os)](https://cirrus-ci.com/github/containers/podman-machine-wsl-os)
 
 # Podman Machine WSL OS
@@ -24,14 +28,14 @@ After that, if the are no changes compared to the last time the CI has been exec
 - Remove the content of the file `/etc/resolv.conf` in `rootfs.tar` and compress it using zstd
 
 If at least one of the 2 images (`amd64` and `arm64`) has been updated then the CI publishes a new release:
-- Creates [a new GitHub release](https://github.com/containers/podman-machine-wsl-os/releases), using the build timestamp as version, and uploads the    
+- Creates [a new GitHub release](https://github.com/containers/podman-machine-wsl-os/releases), using the build timestamp as version, and uploads the
 - Push the OCI artifact to [quay.io/podman/machine-os-wsl](https://quay.io/repository/podman/machine-os-wsl?tab=tags) using the next version of Podman as the image tag
 
 That's done for both `amd64` and `arm64` architectures. And v5.1 and v5.2 zstd files are identical.
 
 ## The Delay with Podman Releases
 
-WSL disk images build is disconnected to Podman release process. 
+WSL disk images build is disconnected to Podman release process.
 
 The WSL disk image build is triggered every 3 hours and it looks for a new version of Podman. But it looks for an update on Fedora stable and that's usually updated a few days after a Podman release.
 
